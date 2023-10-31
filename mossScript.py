@@ -64,9 +64,9 @@ def unzip():
         zip.extractall(unzipped_dir)
 
 
-def javaFileToDirectory():
+def file_to_dir():
     """
-    Finds .java file submissions and turns them into the format lastName.java
+    Finds .{file_extension} file submissions and turns them into the format lastName.java
     and moves them to namedFiles category
     """
     if not os.path.exists(dir+os_separator+'namedFiles'):
@@ -96,11 +96,11 @@ def dealWithZip():
             i += 1
 
 
-def find_Java(search_path):
+def find_file_extension_files(search_path):
     """
-    searches for .java files and notes the directory title which is the last name so we can move it later
+    searches for .{file_extension} files and notes the directory title which is the last name so we can move it later
     to namedFiles
-    gets abs paths of the .java files
+    gets abs paths of the .{file_extension} files
     """
     results = []
     titles = []  # names of students
@@ -123,12 +123,12 @@ def find_Java(search_path):
 
 def moveFiles(lst, titles):
     """
-    searches for .java files and notes the directory title which is the last name so we can move it later
+    searches for .{file_extension} files and notes the directory title which is the last name so we can move it later
     to namedFiles
-    gets abs paths of the .java files
+    gets abs paths of the .{file_extension} files
     """
     silly_number = str(1)
-    for i in range(len(lst)):
+    for i in range(len(titles)):
         file_path = lst[i]
         new_path = named_dir+os_separator+titles[i]
         if os.path.exists(new_path):
@@ -141,16 +141,16 @@ def moveFiles(lst, titles):
 
 # unzip big pilot zip
 unzip()
-# make .java files into dirs
-javaFileToDirectory()
+# make .{file_extension} files into dirs
+file_to_dir()
 # make .zip files into dirs of lastName.dir format
 dealWithZip()
 
-# get all .java file abs paths
-zip_dirs, titles = find_Java(unzipped_dir)
+# get all .{file_extension} file abs paths
+zip_dirs, titles = find_file_extension_files(unzipped_dir)
 titles = list(map(lambda x: x[0:len(x)-4]+file_extension, titles))
 print('Found {} submissions.'.format(len(titles) + len(os.listdir(named_dir))))
-# move .java files into namedFiles
+# move .{file_extension} files into namedFiles
 moveFiles(
     zip_dirs, titles)
 

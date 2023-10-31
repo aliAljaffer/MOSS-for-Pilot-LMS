@@ -1,0 +1,9 @@
+*.png
+*.java
+moss
+m.py
+.DS_Store
+*.svg
+*.zip
+.vscode
+*.txt

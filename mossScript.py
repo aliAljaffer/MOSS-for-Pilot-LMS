@@ -4,6 +4,7 @@ import shutil
 import subprocess
 import platform
 import random
+import datetime
 
 # Deciding on directory sep. Mac&Linux us '/' while Windows uses '\'
 os_separator: str = "/" if platform.system() in ["Linux", "Darwin"] else "\\"
@@ -51,6 +52,16 @@ unzipped_dir = dir+os_separator+'unzipped'
 named_dir = dir+os_separator+'namedFiles'
 
 
+def get_last_name(file: str) -> str:
+    """
+    gets the last name from file
+    """
+    try:
+        return file.split(' - ')[1].split()[1]
+    except:
+        return file
+
+
 def unzip():
     """
     unizps main zip file downloaded from Pilot into unzipped directory
@@ -85,12 +96,44 @@ def file_to_dir():
         if file_name[-len(file_extension):] == file_extension:
             new_name = ''
             try:
-                new_name = file_name.split(
-                    ' - ')[1].split()[1] + file_extension if file_name.index(' - ') else file_name
+                new_name = get_last_name(
+                    file_name) + file_extension if file_name.index(' - ') else file_name
             except:
                 new_name = file_name
             os.rename(unzipped_dir+os_separator+file_name,
                       curr_dir+dir+os_separator+'namedFiles'+os_separator+new_name)
+
+
+# stores the date of the most recently processed submission
+user_submissions_dates = dict()
+
+
+def getDate(file_name):
+    """
+    Gets the date from a file_name. Uses splitting and formatting
+    based on Pilot
+    """
+    try:
+        date = str.join(' ', file_name.split(
+            ' - ')[2].split(' ')[:3]).replace(',', '')
+        time = str.join(' ', file_name.split(' - ')[2].split(' ')[3:])
+        date = datetime.datetime.strptime(date, '%b %d %Y').date()
+        time = datetime.datetime.strptime(time, '%I%M %p').time()
+        date_object = datetime.datetime.combine(date, time)
+        return date_object
+    except:
+        return "NoDate"
+
+
+def isMoreRecent(d1, d2):
+    """
+    checks if d1: date is more recent compared to d2:date
+    """
+    if not isinstance(d1, datetime.datetime) or not isinstance(d2, datetime.datetime):
+        return False
+    else:
+        # if d1 is newer
+        return d1 > d2
 
 
 def dealWithZip():
@@ -102,20 +145,26 @@ def dealWithZip():
     if not os.path.exists(unzipped_dir):
         return
     for zipped_file in os.listdir(unzipped_dir):
+        user_last_name = get_last_name(zipped_file)
         if zipped_file[-4:] != '.zip':
             continue
+        stored_user_date = user_submissions_dates.get(user_last_name, "NoDate")
+        current_user_date = getDate(zipped_file)
+        # If stored is newer than current file, skip
+        if stored_user_date != "NoDate" and isMoreRecent(stored_user_date, current_user_date):
+            continue
         with ZipFile(unzipped_dir+os_separator+zipped_file, 'r') as zf:
-            get_name = ''
-            try:
-                get_name = zipped_file.split(
-                    ' - ')[1].split()[1] if zipped_file.index(' - ') else zipped_file
-            except:
-                get_name = zipped_file
             temp_dir = unzipped_dir+os_separator + \
-                (get_name)+'.dir'
+                (user_last_name)+'.dir'
             if not os.path.exists(temp_dir):
                 os.mkdir(temp_dir)
+            else:
+                shutil.rmtree(temp_dir)
+                os.mkdir(temp_dir)
             zf.extractall(temp_dir)
+            # update the last name to have the latest date
+            user_submissions_dates[user_last_name] = current_user_date
+
             i += 1
 
 
@@ -189,8 +238,7 @@ titles = list(
 print('Found {} {} and {} .zip submissions.'.format(
     len(os.listdir(named_dir)), file_extension, len(zip_dirs)))
 # move .{file_extension} files into namedFiles
-moveFiles(
-    zip_dirs, titles)
+moveFiles(zip_dirs, titles)
 
 # # run moss!
 subprocess.Popen(
